@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 **/
+
 var Delaunay;
 
 (function() {
@@ -1687,22 +1688,13 @@ c);e.bind(this.domElement,"transitionend",c);e.bind(this.domElement,"oTransition
       }
     }
   };
-
-
-  //------------------------------
-  // Global Properties
-  //------------------------------
   var center = FSS.Vector3.create();
   var container = document.getElementById('container');
-  // var controls = document.getElementById('controls');
   var output = document.getElementById('output');
   var renderer, scene, mesh, geometry, material;
   var webglRenderer, canvasRenderer, svgRenderer;
   var gui;
 
-  //------------------------------
-  // Methods
-  //------------------------------
   function initialise() {
     createRenderer();
     createScene();
@@ -1753,7 +1745,6 @@ c);e.bind(this.domElement,"transitionend",c);e.bind(this.domElement,"oTransition
     scene.add(mesh);
   }
 
-  // Add a single light
   function addLight() {
     renderer.clear();
     light = new FSS.Light(LIGHT.ambient, LIGHT.diffuse);
@@ -1766,7 +1757,6 @@ c);e.bind(this.domElement,"transitionend",c);e.bind(this.domElement,"oTransition
     LIGHT.currIndex++;
   }
 
-  // Remove lights
   function trimLights(value) {
     LIGHT.proxy = scene.lights[value];
     for (l = value; l >= scene.lights.length - 1; l--) {
@@ -1776,7 +1766,6 @@ c);e.bind(this.domElement,"transitionend",c);e.bind(this.domElement,"oTransition
     renderer.clear();
   }
 
-  // Resize canvas
   function resize(width, height) {
     renderer.setSize(width, height);
     FSS.Vector3.set(center, renderer.halfWidth, renderer.halfHeight);
@@ -1797,122 +1786,6 @@ c);e.bind(this.domElement,"transitionend",c);e.bind(this.domElement,"oTransition
     container.addEventListener('mousemove', onMouseMove);
   }
 
-  function addControls() {
-    var i, l, light, folder, controller;
-
-    // Create GUI
-    gui = new dat.GUI({autoPlace:false});
-
-    controls.appendChild(gui.domElement);
-
-    // Create folders
-    renderFolder = gui.addFolder('Render');
-    meshFolder = gui.addFolder('Mesh');
-    lightFolder = gui.addFolder('Light');
-    exportFolder = gui.addFolder('Export');
-
-    // Open folders
-    lightFolder.open();
-
-    // Add Render Controls
-    controller = renderFolder.add(RENDER, 'renderer', {webgl:WEBGL, canvas:CANVAS, svg:SVG});
-    controller.onChange(function(value) {
-      setRenderer(value);
-    });
-
-    // Add Mesh Controls
-    controller = meshFolder.addColor(MESH, 'ambient');
-    controller.onChange(function(value) {
-      for (i = 0, l = scene.meshes.length; i < l; i++) {
-        scene.meshes[i].material.ambient.set(value);
-      }
-    });
-    controller = meshFolder.addColor(MESH, 'diffuse');
-    controller.onChange(function(value) {
-      for (i = 0, l = scene.meshes.length; i < l; i++) {
-        scene.meshes[i].material.diffuse.set(value);
-      }
-    });
-    controller = meshFolder.add(MESH, 'width', 0.05, 2);
-    controller.onChange(function(value) {
-      if (geometry.width !== value * renderer.width) { createMesh(); }
-    });
-    controller = meshFolder.add(MESH, 'height', 0.05, 2);
-    controller.onChange(function(value) {
-      if (geometry.height !== value * renderer.height) { createMesh(); }
-    });
-    controller = meshFolder.add(MESH, 'slices', 1, 800);
-    controller.step(1);
-    controller.onChange(function(value) {
-      if (geometry.slices !== value) { createMesh(); }
-    });
-
-    // Add Light Controls
-    // TODO: add the number of lights dynamically
-    controller = lightFolder.add(LIGHT, 'currIndex', {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}).name('Current light').listen();
-    controller.onChange(function(value) {
-      LIGHT.proxy = scene.lights[value-1];
-      LIGHT.ambient = LIGHT.proxy.ambient.hex;
-      LIGHT.diffuse = LIGHT.proxy.diffuse.hex;
-      LIGHT.xPos =  LIGHT.proxy.position[0];
-      LIGHT.yPos =  LIGHT.proxy.position[1];
-      LIGHT.zOffset =  LIGHT.proxy.position[2];
-    });
-
-    controller = lightFolder.addColor(LIGHT, 'ambient').listen();
-    controller.onChange(function(value) {
-      LIGHT.proxy.ambient.set(value);
-      LIGHT.proxy.ambientHex =  LIGHT.proxy.ambient.format();
-    });
-
-    controller = lightFolder.addColor(LIGHT, 'diffuse').listen();
-    controller.onChange(function(value) {
-      console.log(value);
-      LIGHT.proxy.diffuse.set(value);
-      LIGHT.proxy.diffuseHex = LIGHT.proxy.ambient.format();
-    });
-
-    controller = lightFolder.add(LIGHT, 'count', 1, 7).listen();
-    controller.step(1);
-    controller.onChange(function(value) {
-      if (scene.lights.length !== value) {
-        // If the value is more then the number of lights, add lights, otherwise delete lights
-        if (value > scene.lights.length) {
-          addLight();
-        } else {
-          trimLights(value);
-        }
-      }
-    });
-
-    controller = lightFolder.add(LIGHT, 'xPos', -mesh.geometry.width/2, mesh.geometry.width/2).listen();
-    controller.step(1);
-    controller.onChange(function(value) {
-      LIGHT.proxy.setPosition(value, LIGHT.proxy.position[1], LIGHT.proxy.position[2]);
-    });
-
-    controller = lightFolder.add(LIGHT, 'yPos', -mesh.geometry.height/2, mesh.geometry.height/2).listen();
-    controller.step(1);
-    controller.onChange(function(value) {
-      LIGHT.proxy.setPosition(LIGHT.proxy.position[0], value, LIGHT.proxy.position[2]);
-    });
-
-    controller = lightFolder.add(LIGHT, 'zOffset', 0, 1000).name('Distance').listen();
-    controller.step(1);
-    controller.onChange(function(value) {
-      LIGHT.proxy.setPosition(LIGHT.proxy.position[0], LIGHT.proxy.position[1], value);
-    });
-
-    // Add Export Controls
-    controller = exportFolder.add(EXPORT, 'width', 100, 3000);
-    controller.step(100);
-    controller = exportFolder.add(EXPORT, 'height', 100, 3000);
-    controller.step(100);
-    controller = exportFolder.add(EXPORT, 'export').name('export big');
-    controller = exportFolder.add(EXPORT, 'exportCurrent').name('export this');
-
-  }
-
   function toggleEl(id) {
     var e = document.getElementById(id);
     if(e.style.display == 'block')
@@ -1920,11 +1793,6 @@ c);e.bind(this.domElement,"transitionend",c);e.bind(this.domElement,"oTransition
     else
        e.style.display = 'block';
   }
-
-
-  //------------------------------
-  // Callbacks
-  //------------------------------
 
   function onWindowResize(event) {
     resize(container.offsetWidth, container.offsetHeight);
@@ -1939,23 +1807,6 @@ c);e.bind(this.domElement,"transitionend",c);e.bind(this.domElement,"oTransition
     }
   }
 
-  // Hide the controls completely on pressing H
-  Mousetrap.bind('H', function() {
-    toggleEl('controls')
-  });
-
-  // Add a light on ENTER key
-  Mousetrap.bind('enter', function() {
-    LIGHT.count++;
-    addLight();
-  });
-
-  // Pick up the light when a space is pressed
-  Mousetrap.bind('space', function() {
-    LIGHT.pickedup = !LIGHT.pickedup;
-  });
-
-  // Let there be light!
   initialise();
 
 })();
